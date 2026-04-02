@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: bugtracker-service
+  labels:
+    app: bugtracker
+spec:
+  type: LoadBalancer
+  selector:
+    app: bugtracker
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8080
