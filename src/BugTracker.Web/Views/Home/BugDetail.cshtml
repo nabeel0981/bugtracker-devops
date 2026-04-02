@@ -1,0 +1,188 @@
+@model BugTracker.Web.Models.Bug
+@{
+    ViewData["Title"] = $"Bug #{Model.Id}";
+    var projects = ViewData["Projects"] as List<BugTracker.Web.Models.Project> ?? new();
+    var project = projects.FirstOrDefault(p => p.Id == Model.ProjectId);
+    var pc = Model.Priority switch {
+        BugTracker.Web.Models.BugPriority.Critical => "priority-critical",
+        BugTracker.Web.Models.BugPriority.High => "priority-high",
+        BugTracker.Web.Models.BugPriority.Medium => "priority-medium",
+        _ => "priority-low"
+    };
+    var sc = Model.Status switch {
+        BugTracker.Web.Models.BugStatus.Open => "status-open",
+        BugTracker.Web.Models.BugStatus.InProgress => "status-inprogress",
+        BugTracker.Web.Models.BugStatus.Resolved => "status-resolved",
+        _ => "status-closed"
+    };
+}
+
+<!-- Back + Actions -->
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <a href="/bugs" class="btn-ghost"><i class="bi bi-arrow-left"></i> Back to Bugs</a>
+    <div class="d-flex gap-2">
+        <a href="/bugs/@Model.Id/edit" class="btn-ghost"><i class="bi bi-pencil"></i> Edit</a>
+        @if (Model.Status == BugTracker.Web.Models.BugStatus.Open || Model.Status == BugTracker.Web.Models.BugStatus.InProgress)
+        {
+            <form method="post" action="/bugs/@Model.Id/resolve">
+                <button type="submit" class="btn-success-custom"><i class="bi bi-check-lg"></i> Mark Resolved</button>
+            </form>
+        }
+        @if (Model.Status == BugTracker.Web.Models.BugStatus.Resolved)
+        {
+            <form method="post" action="/bugs/@Model.Id/close">
+                <button type="submit" class="btn-ghost"><i class="bi bi-x-lg"></i> Close Bug</button>
+            </form>
+        }
+        <form method="post" action="/bugs/@Model.Id/delete" onsubmit="return confirm('Are you sure you want to delete this bug?')">
+            <button type="submit" class="btn-danger-custom"><i class="bi bi-trash"></i> Delete</button>
+        </form>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- Main Content -->
+    <div class="col-md-8">
+        <div class="content-card mb-3">
+            <div class="content-card-body">
+                <!-- Bug ID + Badges -->
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <span style="font-size:12px;color:#a0aec0;font-weight:600;">BUG-@Model.Id</span>
+                    <span class="priority-badge @pc">@Model.Priority</span>
+                    <span class="status-badge @sc">@Model.Status</span>
+                    @if (project != null)
+                    {
+                        <span style="background:#edf2ff;color:#3c366b;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;">@project.Name</span>
+                    }
+                </div>
+
+                <!-- Title -->
+                <h4 style="font-size:20px;font-weight:700;color:#1a202c;margin-bottom:12px;">@Model.Title</h4>
+
+                <!-- Description -->
+                <div style="font-size:14px;color:#4a5568;line-height:1.7;padding:16px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;">
+                    @if (!string.IsNullOrWhiteSpace(Model.Description))
+                    {
+                        @Model.Description
+                    }
+                    else
+                    {
+                        <span style="color:#a0aec0;">No description provided.</span>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="content-card">
+            <div class="content-card-header">
+                <h6><i class="bi bi-activity me-2"></i>Activity Timeline</h6>
+            </div>
+            <div class="content-card-body">
+                <div style="position:relative;padding-left:24px;">
+                    <!-- Timeline line -->
+                    <div style="position:absolute;left:7px;top:8px;bottom:8px;width:2px;background:#e2e8f0;"></div>
+
+                    <!-- Created -->
+                    <div style="position:relative;margin-bottom:20px;">
+                        <div style="position:absolute;left:-20px;top:3px;width:10px;height:10px;border-radius:50%;background:#e53e3e;border:2px solid #fff;box-shadow:0 0 0 2px #e53e3e;"></div>
+                        <div style="font-size:13px;font-weight:500;color:#1a202c;">Bug reported</div>
+                        <div style="font-size:12px;color:#a0aec0;margin-top:2px;">
+                            by <strong>@(string.IsNullOrWhiteSpace(Model.ReportedBy) ? "unknown" : Model.ReportedBy)</strong>
+                            · @Model.CreatedAt.ToString("MMM dd, yyyy 'at' HH:mm")
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.AssignedTo))
+                    {
+                        <div style="position:relative;margin-bottom:20px;">
+                            <div style="position:absolute;left:-20px;top:3px;width:10px;height:10px;border-radius:50%;background:#ed8936;border:2px solid #fff;box-shadow:0 0 0 2px #ed8936;"></div>
+                            <div style="font-size:13px;font-weight:500;color:#1a202c;">Assigned to @Model.AssignedTo</div>
+                            <div style="font-size:12px;color:#a0aec0;margin-top:2px;">Status changed to <span class="status-badge status-inprogress" style="font-size:10px;">In Progress</span></div>
+                        </div>
+                    }
+
+                    @if (Model.ResolvedAt.HasValue)
+                    {
+                        <div style="position:relative;margin-bottom:20px;">
+                            <div style="position:absolute;left:-20px;top:3px;width:10px;height:10px;border-radius:50%;background:#38a169;border:2px solid #fff;box-shadow:0 0 0 2px #38a169;"></div>
+                            <div style="font-size:13px;font-weight:500;color:#1a202c;">Bug resolved</div>
+                            <div style="font-size:12px;color:#a0aec0;margin-top:2px;">@Model.ResolvedAt.Value.ToString("MMM dd, yyyy 'at' HH:mm")</div>
+                        </div>
+                    }
+
+                    @if (Model.Status == BugTracker.Web.Models.BugStatus.Closed)
+                    {
+                        <div style="position:relative;">
+                            <div style="position:absolute;left:-20px;top:3px;width:10px;height:10px;border-radius:50%;background:#4a5568;border:2px solid #fff;box-shadow:0 0 0 2px #4a5568;"></div>
+                            <div style="font-size:13px;font-weight:500;color:#1a202c;">Bug closed</div>
+                            <div style="font-size:12px;color:#a0aec0;margin-top:2px;">Marked as closed</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar Details -->
+    <div class="col-md-4">
+        <div class="content-card">
+            <div class="content-card-header">
+                <h6><i class="bi bi-info-circle me-2"></i>Details</h6>
+            </div>
+            <div class="content-card-body">
+                <div style="display:grid;gap:16px;">
+                    <div>
+                        <div style="font-size:11px;font-weight:600;color:#a0aec0;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Status</div>
+                        <span class="status-badge @sc">@Model.Status</span>
+                    </div>
+                    <div>
+                        <div style="font-size:11px;font-weight:600;color:#a0aec0;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Priority</div>
+                        <span class="priority-badge @pc">@Model.Priority</span>
+                    </div>
+                    <div>
+                        <div style="font-size:11px;font-weight:600;color:#a0aec0;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Reported By</div>
+                        <div style="font-size:14px;color:#2d3748;">
+                            <i class="bi bi-person-circle me-1"></i>
+                            @(string.IsNullOrWhiteSpace(Model.ReportedBy) ? "Unknown" : Model.ReportedBy)
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-size:11px;font-weight:600;color:#a0aec0;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Assigned To</div>
+                        <div style="font-size:14px;color:#2d3748;">
+                            @if (string.IsNullOrWhiteSpace(Model.AssignedTo))
+                            {
+                                <span style="color:#a0aec0;">Unassigned</span>
+                            }
+                            else
+                            {
+                                <span><i class="bi bi-person-check-fill me-1" style="color:#38a169;"></i>@Model.AssignedTo</span>
+                            }
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-size:11px;font-weight:600;color:#a0aec0;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Project</div>
+                        <div style="font-size:14px;color:#2d3748;">
+                            @(project != null ? project.Name : "—")
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-size:11px;font-weight:600;color:#a0aec0;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Created</div>
+                        <div style="font-size:14px;color:#2d3748;">@Model.CreatedAt.ToString("MMM dd, yyyy")</div>
+                        <div style="font-size:12px;color:#a0aec0;">@Model.CreatedAt.ToString("HH:mm UTC")</div>
+                    </div>
+                    @if (Model.ResolvedAt.HasValue)
+                    {
+                        <div>
+                            <div style="font-size:11px;font-weight:600;color:#a0aec0;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Resolved</div>
+                            <div style="font-size:14px;color:#276749;">@Model.ResolvedAt.Value.ToString("MMM dd, yyyy")</div>
+                            <div style="font-size:12px;color:#a0aec0;">
+                                Time to resolve: @((Model.ResolvedAt.Value - Model.CreatedAt).Days)d @((Model.ResolvedAt.Value - Model.CreatedAt).Hours)h
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

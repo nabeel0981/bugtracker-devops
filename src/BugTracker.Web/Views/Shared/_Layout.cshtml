@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — BugTracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet" />
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f4f5f7; display: flex; min-height: 100vh; }
+
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            min-height: 100vh;
+            background: #1a1d23;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0; left: 0;
+            z-index: 100;
+        }
+        .sidebar-brand {
+            padding: 20px 20px 16px;
+            border-bottom: 1px solid #2d3139;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+        .sidebar-brand .brand-icon {
+            width: 32px; height: 32px;
+            background: #e53e3e;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px;
+        }
+        .sidebar-brand .brand-name {
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+        .sidebar-section {
+            padding: 16px 12px 8px;
+            font-size: 10px;
+            font-weight: 600;
+            color: #4a5568;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .sidebar-nav { padding: 0 8px; flex: 1; }
+        .nav-item-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 12px;
+            border-radius: 8px;
+            color: #a0aec0;
+            text-decoration: none;
+            font-size: 14px;
+            margin-bottom: 2px;
+            transition: all 0.15s;
+        }
+        .nav-item-link:hover { background: #2d3139; color: #ffffff; }
+        .nav-item-link.active { background: #2d3139; color: #ffffff; }
+        .nav-item-link i { font-size: 16px; width: 20px; text-align: center; }
+        .nav-badge {
+            margin-left: auto;
+            background: #e53e3e;
+            color: #fff;
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        .sidebar-footer {
+            padding: 16px;
+            border-top: 1px solid #2d3139;
+            color: #4a5568;
+            font-size: 12px;
+        }
+
+        /* Main content */
+        .main-wrapper {
+            margin-left: 240px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .topbar {
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 0 28px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 99;
+        }
+        .topbar-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1a202c;
+        }
+        .topbar-right { display: flex; align-items: center; gap: 12px; }
+        .page-content { padding: 28px; }
+
+        /* Cards */
+        .stat-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            height: 100%;
+        }
+        .stat-card .stat-value { font-size: 28px; font-weight: 700; color: #1a202c; }
+        .stat-card .stat-label { font-size: 13px; color: #718096; margin-top: 2px; }
+        .stat-card .stat-icon {
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+
+        /* Content card */
+        .content-card {
+            background: #ffffff;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+        .content-card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .content-card-header h6 {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a202c;
+        }
+        .content-card-body { padding: 20px; }
+
+        /* Table */
+        .bt-table { width: 100%; border-collapse: collapse; }
+        .bt-table th {
+            padding: 10px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f8fafc;
+            text-align: left;
+        }
+        .bt-table td {
+            padding: 12px 16px;
+            font-size: 14px;
+            color: #2d3748;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+        .bt-table tr:last-child td { border-bottom: none; }
+        .bt-table tr:hover td { background: #f8fafc; }
+        .bt-table tr { cursor: pointer; }
+
+        /* Badges */
+        .priority-badge, .status-badge {
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .priority-critical { background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; }
+        .priority-high     { background: #fffaf0; color: #c05621; border: 1px solid #feebc8; }
+        .priority-medium   { background: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8; }
+        .priority-low      { background: #f0fff4; color: #276749; border: 1px solid #c6f6d5; }
+
+        .status-open       { background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; }
+        .status-inprogress { background: #fffaf0; color: #c05621; border: 1px solid #feebc8; }
+        .status-resolved   { background: #f0fff4; color: #276749; border: 1px solid #c6f6d5; }
+        .status-closed     { background: #f7fafc; color: #4a5568; border: 1px solid #e2e8f0; }
+
+        /* Buttons */
+        .btn-primary-custom {
+            background: #e53e3e;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            transition: background 0.15s;
+        }
+        .btn-primary-custom:hover { background: #c53030; color: #fff; }
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid #e2e8f0;
+            color: #4a5568;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            transition: all 0.15s;
+        }
+        .btn-ghost:hover { background: #f7fafc; color: #1a202c; }
+        .btn-success-custom {
+            background: #38a169;
+            color: #fff;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .btn-success-custom:hover { background: #276749; }
+        .btn-danger-custom {
+            background: transparent;
+            border: 1px solid #fed7d7;
+            color: #c53030;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-danger-custom:hover { background: #fff5f5; }
+
+        /* Form controls */
+        .form-control-custom {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 14px;
+            color: #2d3748;
+            width: 100%;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        .form-control-custom:focus { border-color: #e53e3e; box-shadow: 0 0 0 3px rgba(229,62,62,0.1); }
+        label.form-label-custom {
+            font-size: 13px;
+            font-weight: 500;
+            color: #4a5568;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        /* Alert */
+        .alert-custom {
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 16px;
+        }
+        .alert-success { background: #f0fff4; color: #276749; border: 1px solid #c6f6d5; }
+        .alert-danger  { background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <a href="/" class="sidebar-brand">
+            <div class="brand-icon">🐛</div>
+            <span class="brand-name">BugTracker</span>
+        </a>
+
+        <div class="sidebar-nav">
+            <div class="sidebar-section">Main</div>
+            <a href="/" class="nav-item-link @(ViewData["Active"]?.ToString() == "Dashboard" ? "active" : "")">
+                <i class="bi bi-speedometer2"></i> Dashboard
+            </a>
+            <a href="/bugs" class="nav-item-link @(ViewData["Active"]?.ToString() == "Bugs" ? "active" : "")">
+                <i class="bi bi-bug"></i> All Bugs
+                <span class="nav-badge" id="open-count">...</span>
+            </a>
+            <a href="/projects" class="nav-item-link @(ViewData["Active"]?.ToString() == "Projects" ? "active" : "")">
+                <i class="bi bi-folder2"></i> Projects
+            </a>
+
+            <div class="sidebar-section">Filters</div>
+            <a href="/bugs?status=Open" class="nav-item-link">
+                <i class="bi bi-circle text-danger"></i> Open
+            </a>
+            <a href="/bugs?status=InProgress" class="nav-item-link">
+                <i class="bi bi-arrow-repeat text-warning"></i> In Progress
+            </a>
+            <a href="/bugs?status=Resolved" class="nav-item-link">
+                <i class="bi bi-check-circle text-success"></i> Resolved
+            </a>
+            <a href="/bugs?priority=Critical" class="nav-item-link">
+                <i class="bi bi-exclamation-triangle text-danger"></i> Critical
+            </a>
+        </div>
+
+        <div class="sidebar-footer">
+            <div style="color:#a0aec0; font-size:12px;">BugTracker v1.0</div>
+            <div style="color:#4a5568; font-size:11px; margin-top:2px;">.NET 9 · In-Memory</div>
+        </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="main-wrapper">
+        <div class="topbar">
+            <span class="topbar-title">@ViewData["Title"]</span>
+            <div class="topbar-right">
+                <a href="/bugs/create" class="btn-primary-custom">
+                    <i class="bi bi-plus"></i> Report Bug
+                </a>
+            </div>
+        </div>
+        <div class="page-content">
+            @RenderBody()
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        fetch('/metrics-info').then(r=>r.json()).then(d=>{
+            const el = document.getElementById('open-count');
+            if(el) el.textContent = d.openBugs;
+        }).catch(()=>{});
+    </script>
+</body>
+</html>

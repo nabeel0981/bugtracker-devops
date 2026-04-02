@@ -1,0 +1,99 @@
+@model List<BugTracker.Web.Models.ProjectViewModel>
+@{
+    ViewData["Title"] = "Projects";
+}
+
+<div class="row g-3 mb-4">
+    <!-- Create Project Card -->
+    <div class="col-md-4">
+        <div class="content-card" style="border:2px dashed #e2e8f0;background:#fafbfc;">
+            <div class="content-card-header" style="border:none;background:transparent;">
+                <h6><i class="bi bi-plus-circle me-2"></i>New Project</h6>
+            </div>
+            <div class="content-card-body">
+                <form method="post" action="/projects/create">
+                    <div style="display:grid;gap:12px;">
+                        <div>
+                            <label class="form-label-custom">Project Name *</label>
+                            <input name="name" class="form-control-custom" placeholder="e.g. Frontend, Backend API" required />
+                        </div>
+                        <div>
+                            <label class="form-label-custom">Description</label>
+                            <input name="description" class="form-control-custom" placeholder="Short description" />
+                        </div>
+                        <button type="submit" class="btn-primary-custom" style="width:100%;justify-content:center;">
+                            <i class="bi bi-plus"></i> Create Project
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Project Cards -->
+    @foreach (var vm in Model)
+    {
+        <div class="col-md-4">
+            <div class="content-card" style="height:100%;">
+                <div class="content-card-header">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <div style="width:36px;height:36px;background:#1a1d23;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;">📁</div>
+                        <div>
+                            <div style="font-size:14px;font-weight:600;color:#1a202c;">@vm.Project.Name</div>
+                            <div style="font-size:11px;color:#a0aec0;">Created @vm.Project.CreatedAt.ToString("MMM dd, yyyy")</div>
+                        </div>
+                    </div>
+                    <form method="post" action="/projects/@vm.Project.Id/delete" onsubmit="return confirm('Delete this project?')">
+                        <button type="submit" class="btn-danger-custom" style="padding:4px 10px;font-size:12px;">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </form>
+                </div>
+                <div class="content-card-body">
+                    <div style="font-size:13px;color:#718096;margin-bottom:16px;min-height:20px;">
+                        @(string.IsNullOrWhiteSpace(vm.Project.Description) ? "No description provided." : vm.Project.Description)
+                    </div>
+
+                    <!-- Stats -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+                        <div style="background:#f8fafc;border-radius:8px;padding:12px;text-align:center;">
+                            <div style="font-size:22px;font-weight:700;color:#1a202c;">@vm.BugCount</div>
+                            <div style="font-size:11px;color:#718096;">Total Bugs</div>
+                        </div>
+                        <div style="background:#fff5f5;border-radius:8px;padding:12px;text-align:center;">
+                            <div style="font-size:22px;font-weight:700;color:#c53030;">@vm.OpenCount</div>
+                            <div style="font-size:11px;color:#718096;">Open</div>
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    @{
+                        var pct = vm.BugCount == 0 ? 0 : (int)(((vm.BugCount - vm.OpenCount) * 100.0) / vm.BugCount);
+                    }
+                    <div style="margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+                        <span style="font-size:12px;color:#718096;">Progress</span>
+                        <span style="font-size:12px;font-weight:600;color:#276749;">@pct%</span>
+                    </div>
+                    <div style="background:#f1f5f9;border-radius:4px;height:6px;margin-bottom:16px;">
+                        <div style="background:#38a169;width:@pct%;height:6px;border-radius:4px;transition:width 0.3s;"></div>
+                    </div>
+
+                    <a href="/bugs?projectId=@vm.Project.Id" class="btn-ghost" style="width:100%;justify-content:center;display:flex;">
+                        <i class="bi bi-bug me-1"></i> View Bugs
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="col-12">
+            <div style="text-align:center;padding:60px 20px;color:#a0aec0;">
+                <div style="font-size:40px;margin-bottom:12px;">📁</div>
+                <div style="font-size:16px;font-weight:600;color:#1a202c;">No projects yet</div>
+                <div style="font-size:13px;margin-top:4px;">Create your first project to organize bugs</div>
+            </div>
+        </div>
+    }
+</div>

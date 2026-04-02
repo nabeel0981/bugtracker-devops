@@ -1,0 +1,162 @@
+@model List<BugTracker.Web.Models.Bug>
+@{
+    ViewData["Title"] = "Dashboard";
+    var open = Model.Count(b => b.Status == BugTracker.Web.Models.BugStatus.Open);
+    var inProgress = Model.Count(b => b.Status == BugTracker.Web.Models.BugStatus.InProgress);
+    var resolved = Model.Count(b => b.Status == BugTracker.Web.Models.BugStatus.Resolved);
+    var critical = Model.Count(b => b.Priority == BugTracker.Web.Models.BugPriority.Critical);
+}
+
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#fff5f5;">🐛</div>
+            <div class="stat-value">@Model.Count</div>
+            <div class="stat-label">Total Bugs</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#fff5f5;">🔴</div>
+            <div class="stat-value" style="color:#c53030;">@open</div>
+            <div class="stat-label">Open</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#fffaf0;">⚡</div>
+            <div class="stat-value" style="color:#c05621;">@inProgress</div>
+            <div class="stat-label">In Progress</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#f0fff4;">✅</div>
+            <div class="stat-value" style="color:#276749;">@resolved</div>
+            <div class="stat-label">Resolved</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <!-- Recent Bugs -->
+    <div class="col-md-8">
+        <div class="content-card">
+            <div class="content-card-header">
+                <h6><i class="bi bi-clock-history me-2"></i>Recent Bugs</h6>
+                <a href="/bugs" class="btn-ghost" style="font-size:12px;">View all</a>
+            </div>
+            <table class="bt-table">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Assigned</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var bug in Model.OrderByDescending(b => b.CreatedAt).Take(5))
+                    {
+                        <tr onclick="window.location='/bugs/@bug.Id'">
+                            <td>
+                                <div style="font-weight:500;color:#1a202c;">@bug.Title</div>
+                                @if (!string.IsNullOrWhiteSpace(bug.Description))
+                                {
+                                    <div style="font-size:12px;color:#a0aec0;margin-top:2px;">@(bug.Description.Length > 60 ? bug.Description.Substring(0, 60) + "..." : bug.Description)</div>
+                                }
+                            </td>
+                            <td>
+                                @{
+                                    var pc = bug.Priority switch {
+                                        BugTracker.Web.Models.BugPriority.Critical => "priority-critical",
+                                        BugTracker.Web.Models.BugPriority.High => "priority-high",
+                                        BugTracker.Web.Models.BugPriority.Medium => "priority-medium",
+                                        _ => "priority-low"
+                                    };
+                                }
+                                <span class="priority-badge @pc">@bug.Priority</span>
+                            </td>
+                            <td>
+                                @{
+                                    var sc = bug.Status switch {
+                                        BugTracker.Web.Models.BugStatus.Open => "status-open",
+                                        BugTracker.Web.Models.BugStatus.InProgress => "status-inprogress",
+                                        BugTracker.Web.Models.BugStatus.Resolved => "status-resolved",
+                                        _ => "status-closed"
+                                    };
+                                }
+                                <span class="status-badge @sc">@bug.Status</span>
+                            </td>
+                            <td style="color:#718096;">@(string.IsNullOrWhiteSpace(bug.AssignedTo) ? "—" : bug.AssignedTo)</td>
+                            <td style="color:#a0aec0;font-size:12px;">@bug.CreatedAt.ToString("MMM dd")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Summary Panel -->
+    <div class="col-md-4">
+        <div class="content-card mb-3">
+            <div class="content-card-header">
+                <h6><i class="bi bi-exclamation-triangle me-2"></i>Critical Bugs</h6>
+                <span class="priority-badge priority-critical">@critical</span>
+            </div>
+            <div class="content-card-body" style="padding:12px 20px;">
+                @foreach (var bug in Model.Where(b => b.Priority == BugTracker.Web.Models.BugPriority.Critical).Take(4))
+                {
+                    <div onclick="window.location='/bugs/@bug.Id'" style="padding:10px 0;border-bottom:1px solid #f1f5f9;cursor:pointer;">
+                        <div style="font-size:13px;font-weight:500;color:#1a202c;">@bug.Title</div>
+                        <div style="font-size:11px;color:#a0aec0;margin-top:3px;">
+                            <span class="status-badge @(bug.Status == BugTracker.Web.Models.BugStatus.Open ? "status-open" : "status-inprogress")" style="font-size:10px;">@bug.Status</span>
+                            &nbsp;@(string.IsNullOrWhiteSpace(bug.AssignedTo) ? "Unassigned" : bug.AssignedTo)
+                        </div>
+                    </div>
+                }
+                @if (!Model.Any(b => b.Priority == BugTracker.Web.Models.BugPriority.Critical))
+                {
+                    <div style="text-align:center;padding:20px;color:#a0aec0;font-size:13px;">No critical bugs 🎉</div>
+                }
+            </div>
+        </div>
+
+        <div class="content-card">
+            <div class="content-card-header">
+                <h6><i class="bi bi-bar-chart me-2"></i>By Status</h6>
+            </div>
+            <div class="content-card-body">
+                @{
+                    var total = Model.Count == 0 ? 1 : Model.Count;
+                }
+                <div style="margin-bottom:12px;">
+                    <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+                        <span style="color:#c53030;">Open</span><span>@open</span>
+                    </div>
+                    <div style="background:#f1f5f9;border-radius:4px;height:6px;">
+                        <div style="background:#e53e3e;width:@((open * 100 / total))%;height:6px;border-radius:4px;"></div>
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+                        <span style="color:#c05621;">In Progress</span><span>@inProgress</span>
+                    </div>
+                    <div style="background:#f1f5f9;border-radius:4px;height:6px;">
+                        <div style="background:#ed8936;width:@((inProgress * 100 / total))%;height:6px;border-radius:4px;"></div>
+                    </div>
+                </div>
+                <div>
+                    <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+                        <span style="color:#276749;">Resolved</span><span>@resolved</span>
+                    </div>
+                    <div style="background:#f1f5f9;border-radius:4px;height:6px;">
+                        <div style="background:#38a169;width:@((resolved * 100 / total))%;height:6px;border-radius:4px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

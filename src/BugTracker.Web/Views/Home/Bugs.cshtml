@@ -1,0 +1,124 @@
+@model List<BugTracker.Web.Models.Bug>
+@{
+    ViewData["Title"] = "All Bugs";
+    var statusFilter = ViewData["StatusFilter"]?.ToString() ?? "";
+    var priorityFilter = ViewData["PriorityFilter"]?.ToString() ?? "";
+    var search = ViewData["Search"]?.ToString() ?? "";
+}
+
+<div class="content-card mb-4">
+    <div class="content-card-body" style="padding:16px 20px;">
+        <form method="get" action="/bugs" class="d-flex gap-3 align-items-center flex-wrap">
+            <input name="search" value="@search" class="form-control-custom" placeholder="🔍  Search bugs..." style="width:240px;" />
+            <select name="status" class="form-control-custom" style="width:150px;">
+                <option value="">All Statuses</option>
+                <option value="Open">Open</option>
+                <option value="InProgress">In Progress</option>
+                <option value="Resolved">Resolved</option>
+                <option value="Closed">Closed</option>
+            </select>
+            <select name="priority" class="form-control-custom" style="width:150px;">
+                <option value="">All Priorities</option>
+                <option value="Critical">Critical</option>
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+            </select>
+            <button type="submit" class="btn-primary-custom">Filter</button>
+            @if (!string.IsNullOrWhiteSpace(statusFilter) || !string.IsNullOrWhiteSpace(priorityFilter) || !string.IsNullOrWhiteSpace(search))
+            {
+                <a href="/bugs" class="btn-ghost">Clear</a>
+            }
+            <div style="margin-left:auto;">
+                <span style="font-size:13px;color:#718096;">@Model.Count bug(s) found</span>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="content-card">
+    <div class="content-card-header">
+        <h6><i class="bi bi-bug me-2"></i>Bugs</h6>
+        <a href="/bugs/create" class="btn-primary-custom"><i class="bi bi-plus"></i> Report Bug</a>
+    </div>
+    @if (!Model.Any())
+    {
+        <div style="text-align:center;padding:60px 20px;">
+            <div style="font-size:40px;margin-bottom:12px;">🎉</div>
+            <div style="font-size:16px;font-weight:600;color:#1a202c;">No bugs found</div>
+            <div style="font-size:13px;color:#a0aec0;margin-top:4px;">Try adjusting your filters or report a new bug</div>
+        </div>
+    }
+    else
+    {
+        <table class="bt-table">
+            <thead>
+                <tr>
+                    <th style="width:40px;">#</th>
+                    <th>Title</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Reported By</th>
+                    <th>Assigned To</th>
+                    <th>Created</th>
+                    <th style="width:100px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var bug in Model)
+                {
+                    <tr onclick="window.location='/bugs/@bug.Id'">
+                        <td style="color:#a0aec0;font-size:12px;">#@bug.Id</td>
+                        <td>
+                            <div style="font-weight:500;color:#1a202c;">@bug.Title</div>
+                            @if (!string.IsNullOrWhiteSpace(bug.Description))
+                            {
+                                <div style="font-size:12px;color:#a0aec0;margin-top:2px;">@(bug.Description.Length > 70 ? bug.Description.Substring(0, 70) + "..." : bug.Description)</div>
+                            }
+                        </td>
+                        <td>
+                            @{
+                                var pc = bug.Priority switch {
+                                    BugTracker.Web.Models.BugPriority.Critical => "priority-critical",
+                                    BugTracker.Web.Models.BugPriority.High => "priority-high",
+                                    BugTracker.Web.Models.BugPriority.Medium => "priority-medium",
+                                    _ => "priority-low"
+                                };
+                            }
+                            <span class="priority-badge @pc">@bug.Priority</span>
+                        </td>
+                        <td>
+                            @{
+                                var sc = bug.Status switch {
+                                    BugTracker.Web.Models.BugStatus.Open => "status-open",
+                                    BugTracker.Web.Models.BugStatus.InProgress => "status-inprogress",
+                                    BugTracker.Web.Models.BugStatus.Resolved => "status-resolved",
+                                    _ => "status-closed"
+                                };
+                            }
+                            <span class="status-badge @sc">@bug.Status</span>
+                        </td>
+                        <td style="color:#718096;font-size:13px;">@(string.IsNullOrWhiteSpace(bug.ReportedBy) ? "—" : bug.ReportedBy)</td>
+                        <td style="color:#718096;font-size:13px;">@(string.IsNullOrWhiteSpace(bug.AssignedTo) ? "—" : bug.AssignedTo)</td>
+                        <td style="color:#a0aec0;font-size:12px;">@bug.CreatedAt.ToString("MMM dd, yyyy")</td>
+                        <td onclick="event.stopPropagation()">
+                            <div class="d-flex gap-1">
+                                <a href="/bugs/@bug.Id/edit" class="btn-ghost" style="padding:4px 10px;font-size:12px;">Edit</a>
+                                <form method="post" action="/bugs/@bug.Id/delete" onsubmit="return confirm('Delete this bug?')">
+                                    <button type="submit" class="btn-danger-custom" style="padding:4px 10px;font-size:12px;">Del</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+<script>
+    var statusFilter = "@statusFilter";
+    var priorityFilter = "@priorityFilter";
+    if (statusFilter) document.querySelector('select[name=status]').value = statusFilter;
+    if (priorityFilter) document.querySelector('select[name=priority]').value = priorityFilter;
+</script>
